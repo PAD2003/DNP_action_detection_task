@@ -6,8 +6,8 @@ from PIL import Image
 import math
 from collections import defaultdict
 
-from pose.HeadPoseEstimator import HeadPoseEstimator
-from pose.Pose import angle_vector, Pose
+from HeadPoseEstimator import HeadPoseEstimator
+from pose import angle_vector, Pose
 
 # BGR color
 GREEN_COLOR = (0, 255, 0)
