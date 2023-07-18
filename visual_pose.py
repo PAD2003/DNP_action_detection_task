@@ -9,6 +9,8 @@ from collections import defaultdict
 from HeadPoseEstimator import HeadPoseEstimator
 from pose import angle_vector, Pose
 
+from test import * 
+
 # BGR color
 GREEN_COLOR = (0, 255, 0)
 BLUE_COLOR = (255, 0, 0)
@@ -298,7 +300,12 @@ if __name__=="__main__":
     parser.add_argument("--show_bounding_box", action="store_true", help="Whether to show bouding box of human")
     parser.add_argument("--background_opacity", type=float, default=0.3, help="Background opacity")
     
+    #! new
+    parser.add_argument("--line_nth", type = int , help='the line you want to read (frame)')
+    
     args = parser.parse_args()
 
+
     visualize(args)
+    
 
