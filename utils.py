@@ -30,7 +30,7 @@ def Print_keys(Dict):
 
 
 #! Change id of a frame
-def change_id(line_json_data_default, old_id= None ,new_id=None):
+def change_id(line_json_data, old_id= None ,new_id=None):
     '''
     a line of .jl file will like
     {'pose': {
@@ -60,7 +60,7 @@ def change_id(line_json_data_default, old_id= None ,new_id=None):
         
     """
     
-    line_json_data = line_json_data_default.copy()
+    # line_json_data = line_json_data_default.copy()
     
     #Person
     person_data = line_json_data['pose']['persons']
@@ -128,8 +128,8 @@ def match_id(args):
         person_before = line_json_data_before['pose']['persons']
         approach_before = line_json_data_before['approach']
 
-        person_after = line_json_data_after ['pose']['persons']
-        approach_after  = line_json_data_after ['approach']
+        person_after = line_json_data_after['pose']['persons']
+        approach_after  = line_json_data_after['approach']
 
         
         id_olds = []
@@ -150,7 +150,9 @@ def match_id(args):
                         print("id_bf: {} and id_af: {} diff = ".format(id_before, id_after) + str(diff))
                         print("diff < args.threshold")
                         Frames[i+1]=change_id(line_json_data_after, id_after, id_before)
-        print("##person_after##")  
+        print("##person_after##")
+        person_after = Frames[i+1]['pose']['persons']
+        approach_after  =  Frames[i+1]['approach']
         print(person_after.keys())
     return Frames
 
