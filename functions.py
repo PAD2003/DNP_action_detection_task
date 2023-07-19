@@ -1,5 +1,6 @@
-# IOU
+import json
 
+# IOU
 def calculate_iou(bbox1, bbox2):
     """
     Calculate the Intersection over Union (IoU) score between two bounding boxes
@@ -82,6 +83,15 @@ def update_with_iou(pose_data, iou_threshold=0.6):
     return updated_data
 
 ## EXTRACT
+def extract_data(file_path) -> dict:
+    data_dict = {}
+    with open(file_path) as fin:
+        # for each line in the json line file, each line corresponds to one frame
+        for idx, line in enumerate(fin):
+            # load the json line as a dictionary
+            data = json.loads(line)
+            data_dict[idx] = data
+    return data_dict
 
 def extract_bounding_boxes(line_data):
     """
@@ -105,3 +115,10 @@ def extract_bounding_boxes(line_data):
                 bounding_boxes.append((tl_coord2d, br_coord2d))
     
     return bounding_boxes
+
+# SAVE JL FILE
+def save_file(data: dict, output_path):
+    with open(output_path, 'w') as file:
+        for idx in range(len(data)):
+            file.write(json.dumps(data[idx]) + '\n')
+
