@@ -162,7 +162,7 @@ if __name__=="__main__":
     pose_path = "data/pose.jl"
     img_w = 1280
     img_h = 720
-    save_path = "output/reId_vid.avi"
+    save_path = "output/pose_reid_thao.avi"
     data = convert_jl_to_dict(pose_path=pose_path)
     #  visualize_frame(data, 1, img_w, img_h)
     #  persons = data[1]["pose"]["persons"]

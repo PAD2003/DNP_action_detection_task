@@ -21,11 +21,11 @@ def save_jl_file(data: dict, save_path) -> None:
     with open(save_path, 'w') as file:
         for key in data.keys():
             file.write(json.dumps(data[key]) + '\n')
+    print("The jl file was successfully saved")
 
 def update_ids(persons: dict, bboxs: dict, map_ids: dict):
-    persons_copy = persons.copy()
-    for id in persons_copy.keys():
-        if id in map_ids.keys():
+    for id in map_ids.keys():
+        if id in persons.keys():
             true_id = map_ids[id]
 
             persons[true_id] = persons.pop(id)
@@ -57,7 +57,7 @@ def visualize_frame(data, frame_id, img_w, img_h):
                 # Visualize box, id information
                 if "Datetime" in approach_data.keys():
                     date_time = approach_data["Datetime"]
-                    img = cv2.putText(img, "{}".format(date_time)\
+                    img = cv2.putText(img, "{}".format(date_time + f", Frame:{frame_id}")\
                             , (5, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, \
                             WHITE_COLOR , 2, cv2.LINE_AA)
                     
@@ -103,19 +103,25 @@ def dist_people(person_1: dict, person_2: dict) -> float:
     
     return dist 
 
-def confidence_keypoints(person_1: dict, person_2: dict) -> True:
+def confidence_keypoints(person: dict):
     """
     return:
         True: person_1 more confidence
         False: person_2 more confidence
     """
-    confidence_1 = 0
-    confidence_2 = 0
-    for key in person_1.keys():
-        confidence_1 += person_1[key][2]
-        confidence_2 += person_2[key][2]
+    total_confidence = 0
+    for key in person.keys():
+        total_confidence += person[key][2]
 
-    return confidence_1 > confidence_2
+    return total_confidence / len(person)
+
+def count_confidence_keypoints(person: dict, confidence_theshold = 0.3):
+    confidence_keypoints = 0
+    for id in person.keys():
+        if person[id][2] > confidence_theshold:
+            confidence_keypoints += 1
+    
+    return confidence_keypoints / len(person)
 
 # BBOX
 def iou(bbox1, bbox2):
@@ -215,7 +221,7 @@ def remove_person(data: dict, area_threshold = 0.4, intersection_area_threshold 
     
     return removed_id_count, data
 
-def should_remove(bbox1, bbox2, area_threshold = 0.4, intersection_area_threshold = 0.6):
+def should_remove(bbox1, bbox2, area_threshold = 0.3, intersection_area_threshold = 0.4):
     area1 = area(bbox1)
     area2 = area(bbox2)
     intersection = intersection_area(bbox1, bbox2)
@@ -225,8 +231,10 @@ def should_remove(bbox1, bbox2, area_threshold = 0.4, intersection_area_threshol
     
     return False
 
-def dist_people_reid(data: dict, threshold = 10) -> dict:
+def reid(data: dict, threshold = 10) -> dict:
     tracked_people = {} # {id (str) : person_data (dict)} # {"1" : {"0": [0.1, 0.1, 0.5], ... }, ... }
+    tracked_bboxs = {}
+
     map_ids = {} # {false_id (str) : true_id (str)}
     max_id = 0
 
@@ -240,56 +248,23 @@ def dist_people_reid(data: dict, threshold = 10) -> dict:
         for id in persons_copy.keys():
             if int(id) <= max_id:
                 tracked_people[id] = persons[id]
+                tracked_bboxs[id] = bboxs[id]
             else:
                 flag = False
                 for tracked_id in tracked_people.keys():
-                    if dist_people(persons[id], tracked_people[tracked_id]) < threshold:
+                    if should_remove(bboxs[id], tracked_bboxs[tracked_id]) and confidence_keypoints(persons[id]) < 0.6:
+                        persons.pop(id)
+                        bboxs.pop(id)
+
+                        print(id)
+                        
+                        flag = True
+                        break
+
+                    elif dist_people(persons[id], tracked_people[tracked_id]) < threshold:
                         if tracked_id in persons_copy.keys():
                             persons.pop(id)
                             bboxs.pop(id)
-                        else:
-                            persons[tracked_id] = persons.pop(id)
-                            bboxs[tracked_id] = bboxs.pop(id)
-                            map_ids[id] = tracked_id
-                        flag = True
-                        break
-                
-                if flag == False:
-                    max_id += 1
-                    tracked_people[str(max_id)] = persons[id]
-                    persons[str(max_id)] = persons.pop(id)
-                    bboxs[str(max_id)] = bboxs.pop(id)
-
-    print(map_ids)
-    return max_id, data
-
-def reid_2(data: dict, dist_threshold = 10, iou_threshold = 0.6) -> dict:
-    tracked_people = {} # {id (str) : person_data (dict)} # {"1" : {"0": [0.1, 0.1, 0.5], ... }, ... }
-    tracked_bboxs = {}
-    map_ids = {} # {false_id (str) : true_id (str)}
-    max_id = 0
-
-    for frame_idx in data.keys():
-        persons: dict = data[frame_idx]["pose"]["persons"]
-        bboxs: dict = data[frame_idx]["approach"]
-
-        update_ids(persons=persons, bboxs=bboxs, map_ids=map_ids)
-
-        persons_copy = persons.copy()
-        for id in persons_copy.keys():
-            if int(id) <= max_id:
-                tracked_people[id] = persons[id]
-            else:
-                flag = False
-                for tracked_id in tracked_people.keys():
-                    if dist_people(persons[id], tracked_people[tracked_id]) < dist_threshold:
-                        if tracked_id in persons_copy.keys():
-                            if should_remove(bboxs[tracked_id], bboxs[id]) == True:
-                                persons.pop(tracked_id)
-                                bboxs.pop(tracked_id)
-                            else:
-                                persons.pop(id)
-                                bboxs.pop(id)
                         else:
                             persons[tracked_id] = persons.pop(id)
                             bboxs[tracked_id] = bboxs.pop(id)
@@ -304,6 +279,68 @@ def reid_2(data: dict, dist_threshold = 10, iou_threshold = 0.6) -> dict:
                     persons[str(max_id)] = persons.pop(id)
                     bboxs[str(max_id)] = bboxs.pop(id)
 
+    for item in map_ids.items():
+        print(item)
+
+    return max_id, data
+
+def reid_2(data: dict, threshold = 10) -> dict:
+    tracked_people = {} # {id (str) : person_data (dict)} # {"1" : {"0": [0.1, 0.1, 0.5], ... }, ... }
+    tracked_bboxs = {}
+
+    map_ids = {} # {false_id (str) : true_id (str)}
+    max_id = 0
+
+    for frame_idx in data.keys():
+        persons: dict = data[frame_idx]["pose"]["persons"]
+        bboxs: dict = data[frame_idx]["approach"]
+
+        update_ids(persons=persons, bboxs=bboxs, map_ids=map_ids)
+
+        persons_copy = persons.copy()
+        for id in persons_copy.keys():
+            if int(id) <= max_id:
+                tracked_people[id] = persons[id]
+                tracked_bboxs[id] = bboxs[id]
+            else:
+                flag = False
+                for tracked_id in tracked_people.keys():
+                    if should_remove(bboxs[id], tracked_bboxs[tracked_id]) and confidence_keypoints(persons[id]) < 0.6:
+                        persons.pop(id)
+                        bboxs.pop(id)
+
+                        print(id)
+                        
+                        flag = True
+                        break
+
+                    elif dist_people(persons[id], tracked_people[tracked_id]) < threshold:
+                        if tracked_id in persons_copy.keys():
+                            persons.pop(id)
+                            bboxs.pop(id)
+
+                            if tracked_id == '4' and id == '18':
+                                print(f"{frame_idx} top")
+                        else:
+                            persons[tracked_id] = persons.pop(id)
+                            bboxs[tracked_id] = bboxs.pop(id)
+                            map_ids[id] = tracked_id
+
+                            if tracked_id == '4' and id == '18':
+                                print(f"{frame_idx} bot")
+                        flag = True
+                        break
+                
+                if flag == False:
+                    max_id += 1
+                    tracked_people[str(max_id)] = persons[id]
+                    tracked_bboxs[str(max_id)] = bboxs[id]
+                    persons[str(max_id)] = persons.pop(id)
+                    bboxs[str(max_id)] = bboxs.pop(id)
+
+    for item in map_ids.items():
+        print(item)
+
     return max_id, data
 
 if __name__ == "__main__":
@@ -313,11 +350,8 @@ if __name__ == "__main__":
 
     # ReID
     data = extract_data(file_path=file_path)
-
-    # removed_id_count, rm_data = remove_person(data)
-    # print(f"Removed ID: {removed_id_count}")
-
-    max_id, reid_data = dist_people_reid(data)
+    max_id, reid_data = reid_2(data)
+    # max_id, reid_data = reid_2( {key: value for key, value in data.items() if int(key) <= 2614} )
     print(f"Max ID: {max_id}")
 
     save_jl_file(data=reid_data, save_path=jl_file_save_path)

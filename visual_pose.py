@@ -224,7 +224,7 @@ def visualize(args):
                 # Visualize box, id information
                 if "Datetime" in approach_data.keys():
                     date_time = approach_data["Datetime"]
-                    img = cv2.putText(img, "{}".format(date_time)\
+                    img = cv2.putText(img, "{}".format(date_time + f", Frame:{idx}")\
                             , (5, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, \
                             WHITE_COLOR , 2, cv2.LINE_AA)
                     
