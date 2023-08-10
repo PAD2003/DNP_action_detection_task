@@ -1,9 +1,8 @@
 import json
-from functions import extract_data, save_file
-from pose import dist
+from src.basic.pose import dist
 import cv2
 import numpy as np
-from visual_pose import  getColorFromIndexSkeleton, getSkeleton,WHITE_COLOR,BLUE_COLOR
+from src.basic.visual_pose import  getColorFromIndexSkeleton, getSkeleton,WHITE_COLOR,BLUE_COLOR
 import math
 
 # BASIC

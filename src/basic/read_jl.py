@@ -1,5 +1,5 @@
 import json
-from pose import Pose
+from src.basic.pose import Pose
 
 def export_pose_reid_file(args):
     with open(args.pose_path) as fin, open(args.output_path, "w") as fout:

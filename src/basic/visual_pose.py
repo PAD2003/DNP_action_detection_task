@@ -279,7 +279,7 @@ def visualize(args):
                                             (tl[0], tl[1] + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, \
                                             WHITE_COLOR , 1, cv2.LINE_AA)
             out.write(img)
-            print(idx)
+            # print(idx)
 
     out.release()
     print("The video was successfully saved")
