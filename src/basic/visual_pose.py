@@ -224,7 +224,7 @@ def visualize(args):
                 # Visualize box, id information
                 if "Datetime" in approach_data.keys():
                     date_time = approach_data["Datetime"]
-                    img = cv2.putText(img, "{}".format(date_time)\
+                    img = cv2.putText(img, "{}".format(date_time + f", Frame:{idx}")\
                             , (5, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, \
                             WHITE_COLOR , 2, cv2.LINE_AA)
                     
@@ -279,7 +279,7 @@ def visualize(args):
                                             (tl[0], tl[1] + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, \
                                             WHITE_COLOR , 1, cv2.LINE_AA)
             out.write(img)
-            print(idx)
+            # print(idx)
 
     out.release()
     print("The video was successfully saved")
